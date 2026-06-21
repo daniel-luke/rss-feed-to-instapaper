@@ -89,3 +89,54 @@ func TestLoad_max_age_days_explicit(t *testing.T) {
 		t.Errorf("MaxAgeDays: got %d, want 7", cfg.MaxAgeDays)
 	}
 }
+
+func TestLoad_sort_by_date_default(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.SortByDate == nil {
+		t.Fatal("SortByDate should not be nil after Load")
+	}
+	if !*cfg.SortByDate {
+		t.Errorf("SortByDate: got false, want true (default)")
+	}
+}
+
+func TestLoad_sort_by_date_false(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("sort_by_date: false\nfeeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.SortByDate == nil {
+		t.Fatal("SortByDate should not be nil after Load")
+	}
+	if *cfg.SortByDate {
+		t.Errorf("SortByDate: got true, want false")
+	}
+}
+
+func TestLoad_sort_by_date_explicit_true(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("sort_by_date: true\nfeeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.SortByDate == nil {
+		t.Fatal("SortByDate should not be nil after Load")
+	}
+	if !*cfg.SortByDate {
+		t.Errorf("SortByDate: got false, want true")
+	}
+}
