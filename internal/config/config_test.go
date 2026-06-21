@@ -61,3 +61,31 @@ func TestLoad_feed_missing_url(t *testing.T) {
 		t.Fatal("expected error for feed missing URL, got nil")
 	}
 }
+
+func TestLoad_max_age_days_default(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.MaxAgeDays != 1 {
+		t.Errorf("MaxAgeDays: got %d, want 1", cfg.MaxAgeDays)
+	}
+}
+
+func TestLoad_max_age_days_explicit(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("max_age_days: 7\nfeeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.MaxAgeDays != 7 {
+		t.Errorf("MaxAgeDays: got %d, want 7", cfg.MaxAgeDays)
+	}
+}

@@ -13,7 +13,8 @@ type Feed struct {
 }
 
 type Config struct {
-	Feeds []Feed `yaml:"feeds"`
+	MaxAgeDays int    `yaml:"max_age_days"`
+	Feeds      []Feed `yaml:"feeds"`
 }
 
 func Load(path string) (*Config, error) {
@@ -32,6 +33,9 @@ func Load(path string) (*Config, error) {
 		if f.URL == "" {
 			return nil, fmt.Errorf("feed %d missing url", i)
 		}
+	}
+	if cfg.MaxAgeDays == 0 {
+		cfg.MaxAgeDays = 1
 	}
 	return &cfg, nil
 }
