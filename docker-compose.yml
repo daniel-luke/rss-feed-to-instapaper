@@ -1,0 +1,26 @@
+services:
+  ofelia:
+    image: mcuadros/ofelia:latest
+    restart: unless-stopped
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - syncer
+
+  syncer:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["sleep", "infinity"]
+    env_file: .env
+    volumes:
+      - state:/data
+      - ./config.yaml:/config/config.yaml:ro
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.run-sync.schedule: "${SYNC_SCHEDULE:-@every 5m}"
+      ofelia.job-exec.run-sync.command: "/syncer"
+      ofelia.job-exec.run-sync.no-overlap: "true"
+
+volumes:
+  state:
