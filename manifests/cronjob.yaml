@@ -15,7 +15,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: syncer
-              image: your-registry/rss-syncer:latest
+              image: rss-feed-to-instapaper/rss-syncer:latest
               imagePullPolicy: Always
               envFrom:
                 - secretRef:
