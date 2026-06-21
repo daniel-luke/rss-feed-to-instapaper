@@ -13,6 +13,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: bhcr-secret
           containers:
             - name: syncer
               image: devops.bighaus.app/rss-feed-to-instapaper/rss-syncer:latest
