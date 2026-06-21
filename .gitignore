@@ -1,0 +1,7 @@
+*.md
+.superpowers/
+syncer
+*.db
+*.db-shm
+*.db-wal
+config.yaml
