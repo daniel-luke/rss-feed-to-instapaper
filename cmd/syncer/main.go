@@ -15,6 +15,8 @@ func main() {
 	statePath := envOr("STATE_PATH", "/data/state.db")
 	username := requireEnv("INSTAPAPER_USERNAME")
 	password := requireEnv("INSTAPAPER_PASSWORD")
+	consumerKey := requireEnv("INSTAPAPER_CONSUMER_KEY")
+	consumerSecret := requireEnv("INSTAPAPER_CONSUMER_SECRET")
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
@@ -27,7 +29,10 @@ func main() {
 	}
 	defer db.Close()
 
-	client := instapaper.NewClient(username, password)
+	client := instapaper.NewClient(consumerKey, consumerSecret, username, password)
+	if err := client.Authenticate(); err != nil {
+		log.Fatalf("authenticate with instapaper: %v", err)
+	}
 
 	for _, f := range cfg.Feeds {
 		log.Printf("processing feed: %s (%s)", f.Label, f.URL)
@@ -47,13 +52,30 @@ func main() {
 				continue
 			}
 
-			if err := client.Add(item.URL, item.Title); err != nil {
+			bookmarkID, err := client.Add(item.URL, item.Title)
+			if err != nil {
 				log.Printf("ERROR add to instapaper %s: %v", item.URL, err)
 				continue
 			}
 
-			if err := db.MarkSent(item.GUID); err != nil {
+			if err := db.MarkSentWithID(item.GUID, bookmarkID); err != nil {
 				log.Printf("ERROR mark sent %s: %v", item.GUID, err)
+			}
+		}
+	}
+
+	aged, err := db.OldItems(cfg.MaxAgeDays)
+	if err != nil {
+		log.Printf("ERROR query old items: %v", err)
+	} else {
+		for _, item := range aged {
+			if item.BookmarkID != nil {
+				if err := client.Archive(*item.BookmarkID); err != nil {
+					log.Printf("ERROR archive bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
+				}
+			}
+			if err := db.DeleteItem(item.GUID); err != nil {
+				log.Printf("ERROR delete item %s: %v", item.GUID, err)
 			}
 		}
 	}
