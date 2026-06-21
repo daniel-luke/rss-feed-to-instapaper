@@ -15,7 +15,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: syncer
-              image: rss-feed-to-instapaper/rss-syncer:latest
+              image: devops.bighaus.app/rss-feed-to-instapaper/rss-syncer:latest
               imagePullPolicy: Always
               envFrom:
                 - secretRef:
