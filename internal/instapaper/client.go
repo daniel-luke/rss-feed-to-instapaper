@@ -131,6 +131,6 @@ func (c *Client) signedPost(endpoint string, params url.Values) (*http.Response,
 
 func newNonce() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
