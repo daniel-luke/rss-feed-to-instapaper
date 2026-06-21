@@ -60,7 +60,8 @@ func (db *DB) MarkSent(guid string) error {
 
 func (db *DB) MarkSentWithID(guid string, bookmarkID int64) error {
 	_, err := db.conn.Exec(
-		`INSERT OR IGNORE INTO sent_items (guid, bookmark_id) VALUES (?, ?)`,
+		`INSERT INTO sent_items (guid, bookmark_id) VALUES (?, ?)
+     ON CONFLICT(guid) DO UPDATE SET bookmark_id = excluded.bookmark_id`,
 		guid, bookmarkID,
 	)
 	if err != nil {
@@ -86,7 +87,14 @@ func (db *DB) OldItems(maxAgeDays int) ([]SentItem, error) {
 		if err := rows.Scan(&item.GUID, &item.BookmarkID, &sentAt); err != nil {
 			return nil, fmt.Errorf("scan old item: %w", err)
 		}
-		item.SentAt, _ = time.Parse("2006-01-02 15:04:05", sentAt)
+		t, err := time.Parse("2006-01-02 15:04:05", sentAt)
+		if err != nil {
+			t, err = time.Parse(time.RFC3339, sentAt)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("parse sent_at %q: %w", sentAt, err)
+		}
+		item.SentAt = t
 		items = append(items, item)
 	}
 	return items, rows.Err()
