@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type Client struct {
@@ -18,7 +19,7 @@ func NewClient(username, password string) *Client {
 		username: username,
 		password: password,
 		baseURL:  "https://www.instapaper.com",
-		http:     &http.Client{},
+		http:     &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
