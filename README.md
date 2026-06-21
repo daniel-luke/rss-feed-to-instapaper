@@ -60,20 +60,6 @@ feeds:
     label: "Another Blog"
 ```
 
-## Releases
-
-Images are published to [GitHub Container Registry](https://ghcr.io/daniel-luke/rss-feed-to-instapaper) on every tagged release.
-
-```bash
-# create and push a release tag
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-This publishes three tags: `v1.0.0`, `v1.0`, and `latest`.
-
-To pin to a specific version in `docker-compose.yml` or `manifests/cronjob.yaml`, replace `:latest` with e.g. `:v1.0.0`.
-
 ## Kubernetes
 
 Apply manifests in order:
