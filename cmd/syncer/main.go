@@ -19,6 +19,9 @@ type pendingItem struct {
 func sortPending(items []pendingItem) {
 	sort.Slice(items, func(i, j int) bool {
 		pi, pj := items[i].item.PublishedAt, items[j].item.PublishedAt
+		if pi == nil && pj == nil {
+			return false
+		}
 		if pi == nil {
 			return true
 		}
