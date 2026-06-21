@@ -58,7 +58,7 @@ func main() {
 
 	var pending []pendingItem
 	for _, f := range cfg.Feeds {
-		log.Printf("processing feed: %s (%s)", f.Label, f.URL)
+		before := len(pending)
 		items, err := feed.FetchItems(f.URL)
 		if err != nil {
 			log.Printf("ERROR fetch feed %s: %v", f.URL, err)
@@ -75,13 +75,16 @@ func main() {
 			}
 			pending = append(pending, pendingItem{item: item, feedLabel: f.Label})
 		}
+		log.Printf("[%s] %d new articles", f.Label, len(pending)-before)
 	}
 
 	if *cfg.SortByDate {
 		sortPending(pending)
 	}
 
+	var added int
 	for _, p := range pending {
+		log.Printf("adding [%s] %q", p.feedLabel, p.item.Title)
 		bookmarkID, err := client.Add(p.item.URL, p.item.Title)
 		if err != nil {
 			log.Printf("ERROR add to instapaper %s: %v", p.item.URL, err)
@@ -90,14 +93,17 @@ func main() {
 		if err := db.MarkSentWithID(p.item.GUID, bookmarkID); err != nil {
 			log.Printf("ERROR mark sent %s: %v", p.item.GUID, err)
 		}
+		added++
 	}
 
+	var archived int
 	aged, err := db.OldItems(cfg.MaxAgeDays)
 	if err != nil {
 		log.Printf("ERROR query old items: %v", err)
 	} else {
 		for _, item := range aged {
 			if item.BookmarkID != nil {
+				log.Printf("archiving %q (bookmark %d)", item.GUID, *item.BookmarkID)
 				if err := client.Archive(*item.BookmarkID); err != nil {
 					log.Printf("ERROR archive bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
 				}
@@ -105,10 +111,11 @@ func main() {
 			if err := db.DeleteItem(item.GUID); err != nil {
 				log.Printf("ERROR delete item %s: %v", item.GUID, err)
 			}
+			archived++
 		}
 	}
 
-	log.Printf("sync complete")
+	log.Printf("sync complete: %d added, %d archived", added, archived)
 }
 
 func requireEnv(key string) string {
