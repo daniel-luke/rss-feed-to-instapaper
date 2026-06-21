@@ -9,6 +9,7 @@ services:
       - syncer
 
   syncer:
+    image: ghcr.io/daniel-luke/rss-feed-to-instapaper:latest
     build: .
     restart: unless-stopped
     entrypoint: ["sleep", "infinity"]
