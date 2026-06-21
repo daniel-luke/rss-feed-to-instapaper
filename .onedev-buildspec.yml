@@ -1,0 +1,68 @@
+version: 49
+jobs:
+- name: build and push
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: BuildImageWithKanikoStep
+    name: build and push
+    output:
+      type: RegistryOutput
+      destinations: '@server@/rss-feed-to-instapaper/rss-syncer:latest'
+    registryLogins:
+    - registryUrl: '@server@'
+      userName: admin
+      passwordSecret: job-token
+    condition: SUCCESSFUL
+    optional: false
+  jobExecutor: cluster-builder
+  triggers:
+  - type: BranchUpdateTrigger
+    branches: main
+    paths: -manifests/**
+    userMatch: anyone
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 14400
+- name: update manifests
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: apply manifests
+    runInContainer: true
+    image: bitnami/kubectl:latest
+    interpreter:
+      type: DefaultInterpreter
+      commands: |
+        cd manifests
+        sed -i "s|your-registry/rss-syncer:latest|@server@/rss-feed-to-instapaper/rss-syncer:latest|g" cronjob.yaml
+        kubectl apply -f pvc.yaml -n rss-feed-to-instapaper
+        kubectl apply -f cronjob.yaml -n rss-feed-to-instapaper
+    runAs: 0:0
+    useTTY: true
+    condition: SUCCESSFUL
+    optional: false
+  jobExecutor: cluster-deployer
+  triggers:
+  - type: BranchUpdateTrigger
+    branches: main
+    paths: manifests/**
+    userMatch: anyone
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 14400
