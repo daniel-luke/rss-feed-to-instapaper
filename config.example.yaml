@@ -1,4 +1,5 @@
 max_age_days: 1
+# sort_by_date: false  # uncomment to add articles in feed order instead of newest-first
 
 feeds:
   - url: "https://example.com/feed.xml"

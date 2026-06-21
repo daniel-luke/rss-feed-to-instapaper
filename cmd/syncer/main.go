@@ -3,12 +3,31 @@ package main
 import (
 	"log"
 	"os"
+	"sort"
 
 	"github.com/danielgroothuis/rss-feed-to-instapaper/internal/config"
 	"github.com/danielgroothuis/rss-feed-to-instapaper/internal/feed"
 	"github.com/danielgroothuis/rss-feed-to-instapaper/internal/instapaper"
 	"github.com/danielgroothuis/rss-feed-to-instapaper/internal/state"
 )
+
+type pendingItem struct {
+	item      feed.Item
+	feedLabel string
+}
+
+func sortPending(items []pendingItem) {
+	sort.Slice(items, func(i, j int) bool {
+		pi, pj := items[i].item.PublishedAt, items[j].item.PublishedAt
+		if pi == nil {
+			return true
+		}
+		if pj == nil {
+			return false
+		}
+		return pi.Before(*pj)
+	})
+}
 
 func main() {
 	configPath := envOr("CONFIG_PATH", "/config/config.yaml")
@@ -34,6 +53,7 @@ func main() {
 		log.Fatalf("authenticate with instapaper: %v", err)
 	}
 
+	var pending []pendingItem
 	for _, f := range cfg.Feeds {
 		log.Printf("processing feed: %s (%s)", f.Label, f.URL)
 		items, err := feed.FetchItems(f.URL)
@@ -41,7 +61,6 @@ func main() {
 			log.Printf("ERROR fetch feed %s: %v", f.URL, err)
 			continue
 		}
-
 		for _, item := range items {
 			sent, err := db.IsSent(item.GUID)
 			if err != nil {
@@ -51,16 +70,22 @@ func main() {
 			if sent {
 				continue
 			}
+			pending = append(pending, pendingItem{item: item, feedLabel: f.Label})
+		}
+	}
 
-			bookmarkID, err := client.Add(item.URL, item.Title)
-			if err != nil {
-				log.Printf("ERROR add to instapaper %s: %v", item.URL, err)
-				continue
-			}
+	if *cfg.SortByDate {
+		sortPending(pending)
+	}
 
-			if err := db.MarkSentWithID(item.GUID, bookmarkID); err != nil {
-				log.Printf("ERROR mark sent %s: %v", item.GUID, err)
-			}
+	for _, p := range pending {
+		bookmarkID, err := client.Add(p.item.URL, p.item.Title)
+		if err != nil {
+			log.Printf("ERROR add to instapaper %s: %v", p.item.URL, err)
+			continue
+		}
+		if err := db.MarkSentWithID(p.item.GUID, bookmarkID); err != nil {
+			log.Printf("ERROR mark sent %s: %v", p.item.GUID, err)
 		}
 	}
 
