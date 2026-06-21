@@ -9,9 +9,10 @@ import (
 )
 
 type Item struct {
-	GUID  string
-	URL   string
-	Title string
+	GUID        string
+	URL         string
+	Title       string
+	PublishedAt *time.Time
 }
 
 func FetchItems(feedURL string) ([]Item, error) {
@@ -32,9 +33,10 @@ func FetchItems(feedURL string) ([]Item, error) {
 			continue
 		}
 		items = append(items, Item{
-			GUID:  guid,
-			URL:   fi.Link,
-			Title: fi.Title,
+			GUID:        guid,
+			URL:         fi.Link,
+			Title:       fi.Title,
+			PublishedAt: fi.PublishedParsed,
 		})
 	}
 	return items, nil
