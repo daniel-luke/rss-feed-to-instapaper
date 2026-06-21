@@ -1,4 +1,4 @@
-syncer
+/syncer
 *.db
 *.db-shm
 *.db-wal
