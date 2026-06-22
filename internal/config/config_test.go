@@ -140,3 +140,31 @@ func TestLoad_sort_by_date_explicit_true(t *testing.T) {
 		t.Errorf("SortByDate: got false, want true")
 	}
 }
+
+func TestLoad_archive_retention_days_default_zero(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.ArchiveRetentionDays != 0 {
+		t.Errorf("ArchiveRetentionDays: got %d, want 0", cfg.ArchiveRetentionDays)
+	}
+}
+
+func TestLoad_archive_retention_days_explicit(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("archive_retention_days: 30\nfeeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.ArchiveRetentionDays != 30 {
+		t.Errorf("ArchiveRetentionDays: got %d, want 30", cfg.ArchiveRetentionDays)
+	}
+}
