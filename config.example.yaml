@@ -1,5 +1,5 @@
 max_age_days: 1
-# sort_by_date: false  # uncomment to add articles in feed order instead of newest-first
+# archive_retention_days: 30  # uncomment to delete archived articles from Instapaper after N days
 
 feeds:
   - url: "https://example.com/feed.xml"
