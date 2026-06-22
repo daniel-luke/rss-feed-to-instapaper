@@ -134,3 +134,39 @@ func TestDB_DeleteItem_nonexistent_is_ok(t *testing.T) {
 		t.Fatalf("DeleteItem on nonexistent guid: %v", err)
 	}
 }
+
+func TestDB_MarkArchived_sets_archived_at(t *testing.T) {
+	db, err := state.Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.MarkSentWithID("to-archive", 99); err != nil {
+		t.Fatalf("MarkSentWithID: %v", err)
+	}
+	if err := db.MarkArchived("to-archive"); err != nil {
+		t.Fatalf("MarkArchived: %v", err)
+	}
+
+	// Item still exists in state.
+	sent, err := db.IsSent("to-archive")
+	if err != nil {
+		t.Fatalf("IsSent: %v", err)
+	}
+	if !sent {
+		t.Error("expected item still present after MarkArchived")
+	}
+}
+
+func TestDB_MarkArchived_nonexistent_is_ok(t *testing.T) {
+	db, err := state.Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.MarkArchived("ghost"); err != nil {
+		t.Fatalf("MarkArchived on nonexistent guid: %v", err)
+	}
+}
