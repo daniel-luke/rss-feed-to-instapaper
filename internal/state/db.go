@@ -31,11 +31,16 @@ func Open(path string) (*DB, error) {
 		conn.Close()
 		return nil, fmt.Errorf("create table: %w", err)
 	}
-	// Migrate: add bookmark_id column absent from pre-retention DBs.
 	if _, err := conn.Exec(`ALTER TABLE sent_items ADD COLUMN bookmark_id INTEGER`); err != nil {
 		if !strings.Contains(err.Error(), "duplicate column name") {
 			conn.Close()
-			return nil, fmt.Errorf("migrate schema: %w", err)
+			return nil, fmt.Errorf("migrate schema (bookmark_id): %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE sent_items ADD COLUMN archived_at DATETIME`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			conn.Close()
+			return nil, fmt.Errorf("migrate schema (archived_at): %w", err)
 		}
 	}
 	return &DB{conn: conn}, nil
@@ -70,9 +75,21 @@ func (db *DB) MarkSentWithID(guid string, bookmarkID int64) error {
 	return nil
 }
 
+func (db *DB) MarkArchived(guid string) error {
+	_, err := db.conn.Exec(
+		`UPDATE sent_items SET archived_at = CURRENT_TIMESTAMP WHERE guid = ?`,
+		guid,
+	)
+	if err != nil {
+		return fmt.Errorf("mark archived: %w", err)
+	}
+	return nil
+}
+
 func (db *DB) OldItems(maxAgeDays int) ([]SentItem, error) {
 	rows, err := db.conn.Query(
-		`SELECT guid, bookmark_id, sent_at FROM sent_items WHERE sent_at < datetime('now', ?)`,
+		`SELECT guid, bookmark_id, sent_at FROM sent_items
+		 WHERE sent_at < datetime('now', ?) AND archived_at IS NULL`,
 		fmt.Sprintf("-%d days", maxAgeDays),
 	)
 	if err != nil {
@@ -86,6 +103,37 @@ func (db *DB) OldItems(maxAgeDays int) ([]SentItem, error) {
 		var sentAt string
 		if err := rows.Scan(&item.GUID, &item.BookmarkID, &sentAt); err != nil {
 			return nil, fmt.Errorf("scan old item: %w", err)
+		}
+		t, err := time.Parse("2006-01-02 15:04:05", sentAt)
+		if err != nil {
+			t, err = time.Parse(time.RFC3339, sentAt)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("parse sent_at %q: %w", sentAt, err)
+		}
+		item.SentAt = t
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (db *DB) ArchivedItems(retentionDays int) ([]SentItem, error) {
+	rows, err := db.conn.Query(
+		`SELECT guid, bookmark_id, sent_at FROM sent_items
+		 WHERE archived_at IS NOT NULL AND archived_at < datetime('now', ?)`,
+		fmt.Sprintf("-%d days", retentionDays),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query archived items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []SentItem
+	for rows.Next() {
+		var item SentItem
+		var sentAt string
+		if err := rows.Scan(&item.GUID, &item.BookmarkID, &sentAt); err != nil {
+			return nil, fmt.Errorf("scan archived item: %w", err)
 		}
 		t, err := time.Parse("2006-01-02 15:04:05", sentAt)
 		if err != nil {

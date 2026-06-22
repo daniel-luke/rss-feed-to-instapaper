@@ -82,6 +82,112 @@ func TestDB_OldItems_skips_recent_items(t *testing.T) {
 	}
 }
 
+func TestDB_OldItems_skips_archived_items(t *testing.T) {
+	db, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	// Insert an old item that has already been archived.
+	if _, err := db.conn.Exec(
+		`INSERT INTO sent_items (guid, bookmark_id, sent_at, archived_at) VALUES (?, ?, ?, ?)`,
+		"already-archived", int64(10), "2020-01-01 00:00:00", "2020-01-02 00:00:00",
+	); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+
+	items, err := db.OldItems(1)
+	if err != nil {
+		t.Fatalf("OldItems: %v", err)
+	}
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (archived item must be excluded)", len(items))
+	}
+}
+
+func TestDB_ArchivedItems_returns_old_archived_items(t *testing.T) {
+	db, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	bookmarkID := int64(77)
+	// Insert an item that was archived long ago.
+	if _, err := db.conn.Exec(
+		`INSERT INTO sent_items (guid, bookmark_id, sent_at, archived_at) VALUES (?, ?, ?, ?)`,
+		"old-archived", bookmarkID, "2020-01-01 00:00:00", "2020-01-02 00:00:00",
+	); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+
+	items, err := db.ArchivedItems(30)
+	if err != nil {
+		t.Fatalf("ArchivedItems: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].GUID != "old-archived" {
+		t.Errorf("GUID: got %q", items[0].GUID)
+	}
+	if items[0].BookmarkID == nil || *items[0].BookmarkID != bookmarkID {
+		t.Errorf("BookmarkID: got %v, want %d", items[0].BookmarkID, bookmarkID)
+	}
+}
+
+func TestDB_ArchivedItems_skips_recently_archived(t *testing.T) {
+	db, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	// MarkArchived uses CURRENT_TIMESTAMP — item is too new to appear.
+	if _, err := db.conn.Exec(
+		`INSERT INTO sent_items (guid, bookmark_id, sent_at) VALUES (?, ?, ?)`,
+		"fresh", int64(1), "2020-01-01 00:00:00",
+	); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+	if err := db.MarkArchived("fresh"); err != nil {
+		t.Fatalf("MarkArchived: %v", err)
+	}
+
+	items, err := db.ArchivedItems(1)
+	if err != nil {
+		t.Fatalf("ArchivedItems: %v", err)
+	}
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (recently archived must not be returned)", len(items))
+	}
+}
+
+func TestDB_ArchivedItems_skips_non_archived_items(t *testing.T) {
+	db, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	// Old item with no archived_at — should not appear in ArchivedItems.
+	if _, err := db.conn.Exec(
+		`INSERT INTO sent_items (guid, bookmark_id, sent_at) VALUES (?, ?, ?)`,
+		"not-archived", int64(2), "2020-01-01 00:00:00",
+	); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+
+	items, err := db.ArchivedItems(1)
+	if err != nil {
+		t.Fatalf("ArchivedItems: %v", err)
+	}
+	if len(items) != 0 {
+		t.Errorf("got %d items, want 0 (non-archived item must not appear)", len(items))
+	}
+}
+
 func TestDB_Open_migrates_existing_db(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/state.db"

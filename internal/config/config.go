@@ -13,9 +13,10 @@ type Feed struct {
 }
 
 type Config struct {
-	MaxAgeDays int    `yaml:"max_age_days"`
-	SortByDate *bool  `yaml:"sort_by_date"`
-	Feeds      []Feed `yaml:"feeds"`
+	MaxAgeDays           int    `yaml:"max_age_days"`
+	ArchiveRetentionDays int    `yaml:"archive_retention_days"`
+	SortByDate           *bool  `yaml:"sort_by_date"`
+	Feeds                []Feed `yaml:"feeds"`
 }
 
 func Load(path string) (*Config, error) {

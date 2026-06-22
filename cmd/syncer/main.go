@@ -107,15 +107,40 @@ func main() {
 				if err := client.Archive(*item.BookmarkID); err != nil {
 					log.Printf("ERROR archive bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
 				}
-			}
-			if err := db.DeleteItem(item.GUID); err != nil {
-				log.Printf("ERROR delete item %s: %v", item.GUID, err)
+				if err := db.MarkArchived(item.GUID); err != nil {
+					log.Printf("ERROR mark archived %s: %v", item.GUID, err)
+				}
+			} else {
+				if err := db.DeleteItem(item.GUID); err != nil {
+					log.Printf("ERROR delete item %s: %v", item.GUID, err)
+				}
 			}
 			archived++
 		}
 	}
 
-	log.Printf("sync complete: %d added, %d archived", added, archived)
+	var deleted int
+	if cfg.ArchiveRetentionDays > 0 {
+		toDelete, err := db.ArchivedItems(cfg.ArchiveRetentionDays)
+		if err != nil {
+			log.Printf("ERROR query archived items: %v", err)
+		} else {
+			for _, item := range toDelete {
+				if item.BookmarkID != nil {
+					log.Printf("deleting %q (bookmark %d)", item.GUID, *item.BookmarkID)
+					if err := client.Delete(*item.BookmarkID); err != nil {
+						log.Printf("ERROR delete bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
+					}
+				}
+				if err := db.DeleteItem(item.GUID); err != nil {
+					log.Printf("ERROR delete item %s: %v", item.GUID, err)
+				}
+				deleted++
+			}
+		}
+	}
+
+	log.Printf("sync complete: %d added, %d archived, %d deleted", added, archived, deleted)
 }
 
 func requireEnv(key string) string {
