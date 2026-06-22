@@ -1,4 +1,5 @@
 # RSS Feed to Instapaper
+[![CodeQL](https://github.com/daniel-luke/rss-feed-to-instapaper/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/daniel-luke/rss-feed-to-instapaper/actions/workflows/github-code-scanning/codeql) [![Build and push Docker image](https://github.com/daniel-luke/rss-feed-to-instapaper/actions/workflows/docker.yml/badge.svg)](https://github.com/daniel-luke/rss-feed-to-instapaper/actions/workflows/docker.yml)
 
 Automatically sync RSS and Atom feeds to your [Instapaper](https://www.instapaper.com/) reading list. New articles are added on a schedule, old articles are archived, and optionally deleted after a set number of days — so your reading list stays clean without any manual effort.
 
