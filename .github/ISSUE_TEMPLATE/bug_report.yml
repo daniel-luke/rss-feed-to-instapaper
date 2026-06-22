@@ -1,0 +1,73 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: deployment-type
+    attributes:
+      label: Deployment type
+      options:
+        - Docker Compose
+        - Kubernetes
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Image tag you are running (e.g. `latest`, `v1.2.0`)
+      placeholder: latest
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: config.yaml
+      description: >
+        Paste your config.yaml here. **Remove any credentials before posting.**
+        The `feeds[].url` and `feeds[].label` values are safe to include.
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the syncer with `docker compose up -d`
+        2. Wait for the first sync
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: >
+        Run `docker compose logs syncer` or `kubectl logs <pod>` and paste the relevant lines.
+        **Remove any credentials.**
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
