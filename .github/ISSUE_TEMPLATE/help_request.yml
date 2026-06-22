@@ -1,0 +1,44 @@
+name: Help request
+description: Stuck getting something working? Ask here.
+labels: ["question"]
+body:
+  - type: dropdown
+    id: deployment-type
+    attributes:
+      label: Deployment type
+      options:
+        - Docker Compose
+        - Kubernetes
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: What you're trying to do
+      placeholder: I'm trying to get my feeds to sync to Instapaper...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you've tried
+      placeholder: I followed the README steps and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: config-logs
+    attributes:
+      label: Relevant config / log output
+      description: >
+        Paste your `config.yaml` and/or log output here.
+        **Remove any credentials before posting.**
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
