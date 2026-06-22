@@ -163,3 +163,44 @@ func TestClient_Archive_non_200_returns_error(t *testing.T) {
 		t.Fatal("expected error for non-200, got nil")
 	}
 }
+
+func TestClient_Delete_sends_bookmark_id(t *testing.T) {
+	var gotBookmarkID string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/1.1/bookmarks/delete" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		_ = r.ParseForm()
+		gotBookmarkID = r.FormValue("bookmark_id")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode([]map[string]interface{}{{"result": "success"}})
+	}))
+	defer srv.Close()
+
+	c := NewClient("k", "s", "u", "p")
+	c.baseURL = srv.URL
+
+	if err := c.Delete(123); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if gotBookmarkID != "123" {
+		t.Errorf("bookmark_id: got %q, want \"123\"", gotBookmarkID)
+	}
+}
+
+func TestClient_Delete_non_200_returns_error(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := NewClient("k", "s", "u", "p")
+	c.baseURL = srv.URL
+
+	if err := c.Delete(1); err == nil {
+		t.Fatal("expected error for non-200, got nil")
+	}
+}

@@ -110,6 +110,20 @@ func (c *Client) Archive(bookmarkID int64) error {
 	return nil
 }
 
+func (c *Client) Delete(bookmarkID int64) error {
+	params := url.Values{"bookmark_id": {strconv.FormatInt(bookmarkID, 10)}}
+	resp, err := c.signedPost("/api/1.1/bookmarks/delete", params)
+	if err != nil {
+		return fmt.Errorf("delete bookmark %d: %w", bookmarkID, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("delete bookmark: instapaper returned %d for id %d", resp.StatusCode, bookmarkID)
+	}
+	return nil
+}
+
 func (c *Client) signedPost(endpoint string, params url.Values) (*http.Response, error) {
 	nonce := newNonce()
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
