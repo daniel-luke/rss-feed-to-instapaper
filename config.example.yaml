@@ -8,3 +8,4 @@ feeds:
     label: "Example Blog"
   - url: "https://another-blog.com/rss"
     label: "Another Blog"
+    # enabled: false  # uncomment to temporarily pause this feed

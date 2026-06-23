@@ -8,8 +8,13 @@ import (
 )
 
 type Feed struct {
-	URL   string `yaml:"url"`
-	Label string `yaml:"label"`
+	URL     string `yaml:"url"`
+	Label   string `yaml:"label"`
+	Enabled *bool  `yaml:"enabled"`
+}
+
+func (f Feed) IsEnabled() bool {
+	return f.Enabled == nil || *f.Enabled
 }
 
 type Config struct {
