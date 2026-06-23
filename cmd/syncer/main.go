@@ -65,6 +65,9 @@ func main() {
 			continue
 		}
 		for _, item := range items {
+			if cfg.MaxInitialItems > 0 && len(pending)-before >= cfg.MaxInitialItems {
+				break
+			}
 			sent, err := db.IsSent(item.GUID)
 			if err != nil {
 				log.Printf("ERROR check state for %s: %v", item.GUID, err)

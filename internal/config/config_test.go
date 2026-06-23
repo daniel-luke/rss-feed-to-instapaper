@@ -159,3 +159,31 @@ func TestLoad_archive_retention_days_explicit(t *testing.T) {
 		t.Errorf("ArchiveRetentionDays: got %d, want 30", cfg.ArchiveRetentionDays)
 	}
 }
+
+func TestLoad_max_initial_items_default_zero(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.MaxInitialItems != 0 {
+		t.Errorf("MaxInitialItems: got %d, want 0 (default)", cfg.MaxInitialItems)
+	}
+}
+
+func TestLoad_max_initial_items_explicit(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("max_initial_items: 10\nfeeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.MaxInitialItems != 10 {
+		t.Errorf("MaxInitialItems: got %d, want 10", cfg.MaxInitialItems)
+	}
+}
