@@ -10,7 +10,7 @@ Built with Kobo e-reader users in mind: if you use Instapaper's native Kobo inte
 - **Automatic syncing** — polls your feeds on a configurable schedule (default: every 5 minutes)
 - **Newest-first ordering** — articles are added in publication-date order so the latest appears at the top of your Instapaper list
 - **Auto-archive** — articles older than a configurable number of days are automatically archived in Instapaper
-- **Auto-delete archived articles** — optionally remove archived articles from Instapaper entirely after a set number of days
+- **Auto-delete archived articles** — optionally remove archived articles from Instapaper entirely after a set number of days, or immediately on every sync
 - **Duplicate prevention** — state is persisted between runs; articles are never added twice
 - **Docker and Kubernetes support** — deploy anywhere with minimal configuration
 
@@ -165,6 +165,7 @@ All feed and sync behavior is configured in `config.yaml`.
 |---|---|---|---|
 | `max_age_days` | integer | `1` | Articles older than this many days are automatically archived in Instapaper |
 | `archive_retention_days` | integer | *(disabled)* | If set, archived articles are permanently deleted from Instapaper after this many days |
+| `clear_archive_on_sync` | boolean | `false` | If `true`, all archived articles are deleted on every sync run. Overrides `archive_retention_days` |
 | `sort_by_date` | boolean | `true` | When `true`, articles are added newest-first. Set to `false` to add in feed order |
 | `feeds` | list | *(required)* | List of RSS/Atom feeds to sync |
 | `feeds[].url` | string | *(required)* | URL of the RSS or Atom feed |

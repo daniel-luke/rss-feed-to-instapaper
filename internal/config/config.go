@@ -15,6 +15,7 @@ type Feed struct {
 type Config struct {
 	MaxAgeDays           int    `yaml:"max_age_days"`
 	ArchiveRetentionDays int    `yaml:"archive_retention_days"`
+	ClearArchiveOnSync   bool   `yaml:"clear_archive_on_sync"`
 	SortByDate           *bool  `yaml:"sort_by_date"`
 	Feeds                []Feed `yaml:"feeds"`
 }
