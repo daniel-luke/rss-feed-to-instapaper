@@ -148,6 +148,35 @@ func (db *DB) ArchivedItems(retentionDays int) ([]SentItem, error) {
 	return items, rows.Err()
 }
 
+func (db *DB) AllArchivedItems() ([]SentItem, error) {
+	rows, err := db.conn.Query(
+		`SELECT guid, bookmark_id, sent_at FROM sent_items WHERE archived_at IS NOT NULL`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query all archived items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []SentItem
+	for rows.Next() {
+		var item SentItem
+		var sentAt string
+		if err := rows.Scan(&item.GUID, &item.BookmarkID, &sentAt); err != nil {
+			return nil, fmt.Errorf("scan archived item: %w", err)
+		}
+		t, err := time.Parse("2006-01-02 15:04:05", sentAt)
+		if err != nil {
+			t, err = time.Parse(time.RFC3339, sentAt)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("parse sent_at %q: %w", sentAt, err)
+		}
+		item.SentAt = t
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (db *DB) DeleteItem(guid string) error {
 	_, err := db.conn.Exec(`DELETE FROM sent_items WHERE guid = ?`, guid)
 	if err != nil {
