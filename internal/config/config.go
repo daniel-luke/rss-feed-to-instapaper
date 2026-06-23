@@ -16,7 +16,7 @@ type Config struct {
 	MaxAgeDays           int    `yaml:"max_age_days"`
 	ArchiveRetentionDays int    `yaml:"archive_retention_days"`
 	ClearArchiveOnSync   bool   `yaml:"clear_archive_on_sync"`
-	SortByDate           *bool  `yaml:"sort_by_date"`
+	DisableDateSort      bool   `yaml:"disable_date_sort"`
 	Feeds                []Feed `yaml:"feeds"`
 }
 
@@ -40,9 +40,5 @@ func Load(path string) (*Config, error) {
 	if cfg.MaxAgeDays == 0 {
 		cfg.MaxAgeDays = 1
 	}
-	if cfg.SortByDate == nil {
-		t := true
-		cfg.SortByDate = &t
-	}
-	return &cfg, nil
+return &cfg, nil
 }
