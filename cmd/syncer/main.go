@@ -78,7 +78,7 @@ func main() {
 		log.Printf("[%s] %d new articles", f.Label, len(pending)-before)
 	}
 
-	if *cfg.SortByDate {
+	if !cfg.DisableDateSort {
 		sortPending(pending)
 	}
 
