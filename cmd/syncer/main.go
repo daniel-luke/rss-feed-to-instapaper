@@ -58,6 +58,10 @@ func main() {
 
 	var pending []pendingItem
 	for _, f := range cfg.Feeds {
+		if !f.IsEnabled() {
+			log.Printf("[%s] skipped (disabled)", f.Label)
+			continue
+		}
 		before := len(pending)
 		items, err := feed.FetchItems(f.URL)
 		if err != nil {

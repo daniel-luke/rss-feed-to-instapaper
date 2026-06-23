@@ -146,6 +146,48 @@ func TestLoad_archive_retention_days_default_zero(t *testing.T) {
 	}
 }
 
+func TestFeed_IsEnabled_default(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.Feeds[0].IsEnabled() {
+		t.Error("IsEnabled: got false, want true (default when omitted)")
+	}
+}
+
+func TestFeed_IsEnabled_explicit_true(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n    enabled: true\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.Feeds[0].IsEnabled() {
+		t.Error("IsEnabled: got false, want true")
+	}
+}
+
+func TestFeed_IsEnabled_false(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("feeds:\n  - url: https://example.com/feed.xml\n    label: Example\n    enabled: false\n"), 0644)
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Feeds[0].IsEnabled() {
+		t.Error("IsEnabled: got true, want false")
+	}
+}
+
 func TestLoad_archive_retention_days_explicit(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
