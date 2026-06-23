@@ -64,8 +64,11 @@ func main() {
 			log.Printf("ERROR fetch feed %s: %v", f.URL, err)
 			continue
 		}
+		isNew, err := db.RegisterFeedIfNew(f.URL)
+		if err != nil {
+			log.Printf("ERROR register feed %s: %v", f.URL, err)
+		}
 		var feedNew []feed.Item
-		hasHistory := false
 		for _, item := range items {
 			sent, err := db.IsSent(item.GUID)
 			if err != nil {
@@ -73,12 +76,11 @@ func main() {
 				continue
 			}
 			if sent {
-				hasHistory = true
 				continue
 			}
 			feedNew = append(feedNew, item)
 		}
-		if cfg.MaxInitialItems > 0 && !hasHistory && len(feedNew) > cfg.MaxInitialItems {
+		if cfg.MaxInitialItems > 0 && isNew && len(feedNew) > cfg.MaxInitialItems {
 			feedNew = feedNew[:cfg.MaxInitialItems]
 		}
 		for _, item := range feedNew {
