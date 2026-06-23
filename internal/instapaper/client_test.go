@@ -204,3 +204,51 @@ func TestClient_Delete_non_200_returns_error(t *testing.T) {
 		t.Fatal("expected error for non-200, got nil")
 	}
 }
+
+func TestClient_ListArchived_returns_bookmark_ids(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/1.1/bookmarks/list" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		_ = r.ParseForm()
+		if r.FormValue("folder_id") != "archive" {
+			t.Errorf("folder_id: got %q, want \"archive\"", r.FormValue("folder_id"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]map[string]interface{}{
+			{"type": "meta", "total": 2},
+			{"type": "user", "username": "test"},
+			{"type": "bookmark", "bookmark_id": 101},
+			{"type": "bookmark", "bookmark_id": 202},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient("k", "s", "u", "p")
+	c.baseURL = srv.URL
+
+	ids, err := c.ListArchived()
+	if err != nil {
+		t.Fatalf("ListArchived: %v", err)
+	}
+	if len(ids) != 2 {
+		t.Fatalf("got %d ids, want 2", len(ids))
+	}
+	if ids[0] != 101 || ids[1] != 202 {
+		t.Errorf("ids: got %v, want [101 202]", ids)
+	}
+}
+
+func TestClient_ListArchived_non_200_returns_error(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := NewClient("k", "s", "u", "p")
+	c.baseURL = srv.URL
+
+	if _, err := c.ListArchived(); err == nil {
+		t.Fatal("expected error for non-200, got nil")
+	}
+}
