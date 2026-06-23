@@ -110,6 +110,42 @@ func (c *Client) Archive(bookmarkID int64) error {
 	return nil
 }
 
+type listItem struct {
+	Type       string `json:"type"`
+	BookmarkID int64  `json:"bookmark_id"`
+}
+
+// ListArchived returns all bookmark IDs in the Instapaper archive.
+// ponytail: single page, max 500 items; add pagination via `have` param if needed.
+func (c *Client) ListArchived() ([]int64, error) {
+	params := url.Values{
+		"folder_id": {"archive"},
+		"limit":     {"500"},
+	}
+	resp, err := c.signedPost("/api/1.1/bookmarks/list", params)
+	if err != nil {
+		return nil, fmt.Errorf("list archived: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("list archived: instapaper returned %d", resp.StatusCode)
+	}
+
+	var items []listItem
+	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
+		return nil, fmt.Errorf("list archived: decode response: %w", err)
+	}
+
+	var ids []int64
+	for _, item := range items {
+		if item.Type == "bookmark" {
+			ids = append(ids, item.BookmarkID)
+		}
+	}
+	return ids, nil
+}
+
 func (c *Client) Delete(bookmarkID int64) error {
 	params := url.Values{"bookmark_id": {strconv.FormatInt(bookmarkID, 10)}}
 	resp, err := c.signedPost("/api/1.1/bookmarks/delete", params)

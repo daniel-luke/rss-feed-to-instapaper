@@ -135,27 +135,46 @@ func main() {
 	}
 
 	var deleted int
-	var toDelete []state.SentItem
-	var toDeleteErr error
 	if cfg.ClearArchiveOnSync {
-		toDelete, toDeleteErr = db.AllArchivedItems()
-	} else if cfg.ArchiveRetentionDays > 0 {
-		toDelete, toDeleteErr = db.ArchivedItems(cfg.ArchiveRetentionDays)
-	}
-	if toDeleteErr != nil {
-		log.Printf("ERROR query archived items: %v", toDeleteErr)
-	} else {
-		for _, item := range toDelete {
-			if item.BookmarkID != nil {
-				log.Printf("deleting %q (bookmark %d)", item.GUID, *item.BookmarkID)
-				if err := client.Delete(*item.BookmarkID); err != nil {
-					log.Printf("ERROR delete bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
+		archivedIDs, err := client.ListArchived()
+		if err != nil {
+			log.Printf("ERROR list archived bookmarks: %v", err)
+		} else {
+			for _, id := range archivedIDs {
+				log.Printf("deleting archived bookmark %d", id)
+				if err := client.Delete(id); err != nil {
+					log.Printf("ERROR delete bookmark %d: %v", id, err)
+				}
+				deleted++
+			}
+		}
+		// purge all DB-tracked archived items regardless of Instapaper result
+		if toDelete, err := db.AllArchivedItems(); err != nil {
+			log.Printf("ERROR query archived items: %v", err)
+		} else {
+			for _, item := range toDelete {
+				if err := db.DeleteItem(item.GUID); err != nil {
+					log.Printf("ERROR delete item %s: %v", item.GUID, err)
 				}
 			}
-			if err := db.DeleteItem(item.GUID); err != nil {
-				log.Printf("ERROR delete item %s: %v", item.GUID, err)
+		}
+	} else if cfg.ArchiveRetentionDays > 0 {
+		toDelete, toDeleteErr := db.ArchivedItems(cfg.ArchiveRetentionDays)
+		if toDeleteErr != nil {
+			log.Printf("ERROR query archived items: %v", toDeleteErr)
+		} else {
+			for _, item := range toDelete {
+				if item.BookmarkID != nil {
+					log.Printf("deleting %q (bookmark %d)", item.GUID, *item.BookmarkID)
+					if err := client.Delete(*item.BookmarkID); err != nil {
+						log.Printf("ERROR delete bookmark %d (%s): %v", *item.BookmarkID, item.GUID, err)
+					}
+				}
+				if err := db.DeleteItem(item.GUID); err != nil {
+					log.Printf("ERROR delete item %s: %v", item.GUID, err)
+				}
+				deleted++
 			}
-			deleted++
 		}
 	}
 
