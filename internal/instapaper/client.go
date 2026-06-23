@@ -111,8 +111,11 @@ func (c *Client) Archive(bookmarkID int64) error {
 }
 
 type listItem struct {
-	Type       string `json:"type"`
-	BookmarkID int64  `json:"bookmark_id"`
+	BookmarkID int64 `json:"bookmark_id"`
+}
+
+type listResponse struct {
+	Bookmarks []listItem `json:"bookmarks"`
 }
 
 // ListArchived returns all bookmark IDs in the Instapaper archive.
@@ -132,21 +135,14 @@ func (c *Client) ListArchived() ([]int64, error) {
 		return nil, fmt.Errorf("list archived: instapaper returned %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("list archived: read response: %w", err)
+	var result listResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("list archived: decode response: %w", err)
 	}
 
-	var items []listItem
-	if err := json.Unmarshal(body, &items); err != nil {
-		return nil, fmt.Errorf("list archived: unexpected response body %q: %w", body, err)
-	}
-
-	var ids []int64
-	for _, item := range items {
-		if item.Type == "bookmark" {
-			ids = append(ids, item.BookmarkID)
-		}
+	ids := make([]int64, 0, len(result.Bookmarks))
+	for _, item := range result.Bookmarks {
+		ids = append(ids, item.BookmarkID)
 	}
 	return ids, nil
 }
