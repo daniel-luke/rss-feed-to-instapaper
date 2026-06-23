@@ -239,7 +239,7 @@ func TestClient_ListArchived_returns_bookmark_ids(t *testing.T) {
 	}
 }
 
-func TestClient_ListArchived_empty_object_returns_nil(t *testing.T) {
+func TestClient_ListArchived_object_response_returns_error(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{}`))
@@ -249,12 +249,9 @@ func TestClient_ListArchived_empty_object_returns_nil(t *testing.T) {
 	c := NewClient("k", "s", "u", "p")
 	c.baseURL = srv.URL
 
-	ids, err := c.ListArchived()
-	if err != nil {
-		t.Fatalf("ListArchived with {} response: %v", err)
-	}
-	if len(ids) != 0 {
-		t.Errorf("expected empty ids, got %v", ids)
+	_, err := c.ListArchived()
+	if err == nil {
+		t.Fatal("expected error for object response, got nil")
 	}
 }
 

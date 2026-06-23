@@ -137,10 +137,9 @@ func (c *Client) ListArchived() ([]int64, error) {
 		return nil, fmt.Errorf("list archived: read response: %w", err)
 	}
 
-	// Instapaper returns {} (object) when archive is empty instead of []
 	var items []listItem
 	if err := json.Unmarshal(body, &items); err != nil {
-		return nil, nil
+		return nil, fmt.Errorf("list archived: unexpected response body %q: %w", body, err)
 	}
 
 	var ids []int64
