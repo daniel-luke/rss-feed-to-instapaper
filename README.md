@@ -164,17 +164,20 @@ All feed and sync behavior is configured in `config.yaml`.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `max_age_days` | integer | `1` | Articles older than this many days are automatically archived in Instapaper |
+| `max_initial_items` | integer | *(disabled)* | If set, caps how many articles are added on the first sync of a feed. Prevents floods when adding a new feed with a large backlog |
 | `archive_retention_days` | integer | *(disabled)* | If set, archived articles are permanently deleted from Instapaper after this many days |
 | `clear_archive_on_sync` | boolean | `false` | If `true`, all archived articles are deleted on every sync run. Overrides `archive_retention_days` |
 | `sort_by_date` | boolean | `true` | When `true`, articles are added newest-first. Set to `false` to add in feed order |
 | `feeds` | list | *(required)* | List of RSS/Atom feeds to sync |
 | `feeds[].url` | string | *(required)* | URL of the RSS or Atom feed |
 | `feeds[].label` | string | *(optional)* | Label to apply to articles added from this feed in Instapaper |
+| `feeds[].enabled` | boolean | `true` | Set to `false` to temporarily pause a feed without removing it from the config |
 
 ### Example
 
 ```yaml
 max_age_days: 7
+max_initial_items: 10
 archive_retention_days: 30
 # sort_by_date: false  # uncomment to add in feed order instead of newest-first
 
@@ -183,6 +186,7 @@ feeds:
     label: "Example Blog"
   - url: "https://another-blog.com/rss"
     label: "Another Blog"
+    enabled: false  # temporarily paused
 ```
 
 ---
