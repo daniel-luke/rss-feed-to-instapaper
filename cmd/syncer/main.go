@@ -64,18 +64,24 @@ func main() {
 			log.Printf("ERROR fetch feed %s: %v", f.URL, err)
 			continue
 		}
+		var feedNew []feed.Item
+		hasHistory := false
 		for _, item := range items {
-			if cfg.MaxInitialItems > 0 && len(pending)-before >= cfg.MaxInitialItems {
-				break
-			}
 			sent, err := db.IsSent(item.GUID)
 			if err != nil {
 				log.Printf("ERROR check state for %s: %v", item.GUID, err)
 				continue
 			}
 			if sent {
+				hasHistory = true
 				continue
 			}
+			feedNew = append(feedNew, item)
+		}
+		if cfg.MaxInitialItems > 0 && !hasHistory && len(feedNew) > cfg.MaxInitialItems {
+			feedNew = feedNew[:cfg.MaxInitialItems]
+		}
+		for _, item := range feedNew {
 			pending = append(pending, pendingItem{item: item, feedLabel: f.Label})
 		}
 		log.Printf("[%s] %d new articles", f.Label, len(pending)-before)
