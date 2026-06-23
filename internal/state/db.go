@@ -43,6 +43,12 @@ func Open(path string) (*DB, error) {
 			return nil, fmt.Errorf("migrate schema (archived_at): %w", err)
 		}
 	}
+	if _, err := conn.Exec(`ALTER TABLE sent_items ADD COLUMN deleted_at DATETIME`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			conn.Close()
+			return nil, fmt.Errorf("migrate schema (deleted_at): %w", err)
+		}
+	}
 	if _, err := conn.Exec(`CREATE TABLE IF NOT EXISTS known_feeds (
 		url        TEXT PRIMARY KEY,
 		added_at   DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -106,7 +112,7 @@ func (db *DB) MarkArchived(guid string) error {
 func (db *DB) OldItems(maxAgeDays int) ([]SentItem, error) {
 	rows, err := db.conn.Query(
 		`SELECT guid, bookmark_id, sent_at FROM sent_items
-		 WHERE sent_at < datetime('now', ?) AND archived_at IS NULL`,
+		 WHERE sent_at < datetime('now', ?) AND archived_at IS NULL AND deleted_at IS NULL`,
 		fmt.Sprintf("-%d days", maxAgeDays),
 	)
 	if err != nil {
@@ -119,7 +125,7 @@ func (db *DB) OldItems(maxAgeDays int) ([]SentItem, error) {
 func (db *DB) ArchivedItems(retentionDays int) ([]SentItem, error) {
 	rows, err := db.conn.Query(
 		`SELECT guid, bookmark_id, sent_at FROM sent_items
-		 WHERE archived_at IS NOT NULL AND archived_at < datetime('now', ?)`,
+		 WHERE archived_at IS NOT NULL AND archived_at < datetime('now', ?) AND deleted_at IS NULL`,
 		fmt.Sprintf("-%d days", retentionDays),
 	)
 	if err != nil {
@@ -131,7 +137,7 @@ func (db *DB) ArchivedItems(retentionDays int) ([]SentItem, error) {
 
 func (db *DB) AllArchivedItems() ([]SentItem, error) {
 	rows, err := db.conn.Query(
-		`SELECT guid, bookmark_id, sent_at FROM sent_items WHERE archived_at IS NOT NULL`,
+		`SELECT guid, bookmark_id, sent_at FROM sent_items WHERE archived_at IS NOT NULL AND deleted_at IS NULL`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query all archived items: %w", err)
@@ -162,7 +168,7 @@ func scanSentRows(rows *sql.Rows) ([]SentItem, error) {
 }
 
 func (db *DB) DeleteItem(guid string) error {
-	_, err := db.conn.Exec(`DELETE FROM sent_items WHERE guid = ?`, guid)
+	_, err := db.conn.Exec(`UPDATE sent_items SET deleted_at = CURRENT_TIMESTAMP WHERE guid = ?`, guid)
 	if err != nil {
 		return fmt.Errorf("delete item: %w", err)
 	}

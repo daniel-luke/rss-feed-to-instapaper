@@ -114,12 +114,13 @@ func TestDB_DeleteItem(t *testing.T) {
 		t.Fatalf("DeleteItem: %v", err)
 	}
 
+	// soft-delete: row kept so IsSent still returns true (prevents re-import)
 	sent, err := db.IsSent("to-delete")
 	if err != nil {
 		t.Fatalf("IsSent: %v", err)
 	}
-	if sent {
-		t.Error("expected item gone after DeleteItem")
+	if !sent {
+		t.Error("expected item still tracked after DeleteItem (soft-delete prevents re-import)")
 	}
 }
 
