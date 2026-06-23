@@ -170,3 +170,27 @@ func TestDB_MarkArchived_nonexistent_is_ok(t *testing.T) {
 		t.Fatalf("MarkArchived on nonexistent guid: %v", err)
 	}
 }
+
+func TestDB_RegisterFeedIfNew(t *testing.T) {
+	db, err := state.Open(":memory:")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	isNew, err := db.RegisterFeedIfNew("https://example.com/feed.xml")
+	if err != nil {
+		t.Fatalf("RegisterFeedIfNew (first): %v", err)
+	}
+	if !isNew {
+		t.Error("expected isNew=true on first registration")
+	}
+
+	isNew, err = db.RegisterFeedIfNew("https://example.com/feed.xml")
+	if err != nil {
+		t.Fatalf("RegisterFeedIfNew (second): %v", err)
+	}
+	if isNew {
+		t.Error("expected isNew=false on subsequent registration")
+	}
+}

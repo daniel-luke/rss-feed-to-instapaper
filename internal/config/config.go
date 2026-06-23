@@ -19,6 +19,7 @@ func (f Feed) IsEnabled() bool {
 
 type Config struct {
 	MaxAgeDays           int    `yaml:"max_age_days"`
+	MaxInitialItems      int    `yaml:"max_initial_items"`
 	ArchiveRetentionDays int    `yaml:"archive_retention_days"`
 	ClearArchiveOnSync   bool   `yaml:"clear_archive_on_sync"`
 	DisableDateSort      bool   `yaml:"disable_date_sort"`

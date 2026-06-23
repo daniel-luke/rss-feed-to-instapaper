@@ -43,7 +43,24 @@ func Open(path string) (*DB, error) {
 			return nil, fmt.Errorf("migrate schema (archived_at): %w", err)
 		}
 	}
+	if _, err := conn.Exec(`CREATE TABLE IF NOT EXISTS known_feeds (
+		url        TEXT PRIMARY KEY,
+		added_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("create known_feeds table: %w", err)
+	}
 	return &DB{conn: conn}, nil
+}
+
+// RegisterFeedIfNew inserts the feed URL if not already known and returns true if it was new.
+func (db *DB) RegisterFeedIfNew(url string) (bool, error) {
+	res, err := db.conn.Exec(`INSERT OR IGNORE INTO known_feeds (url) VALUES (?)`, url)
+	if err != nil {
+		return false, fmt.Errorf("register feed: %w", err)
+	}
+	rows, _ := res.RowsAffected()
+	return rows > 0, nil
 }
 
 func (db *DB) IsSent(guid string) (bool, error) {

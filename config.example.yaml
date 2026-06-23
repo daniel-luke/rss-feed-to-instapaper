@@ -1,4 +1,5 @@
 max_age_days: 1
+# max_initial_items: 10  # uncomment to cap articles added on first sync per feed (prevents first-run floods)
 # archive_retention_days: 30  # uncomment to delete archived articles from Instapaper after N days
 # clear_archive_on_sync: true  # uncomment to delete all archived articles on every sync (overrides archive_retention_days)
 # disable_date_sort: true  # uncomment to add articles in feed order instead of newest-first
