@@ -3,7 +3,7 @@ module github.com/danielgroothuis/rss-feed-to-instapaper
 go 1.23
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.47
+	github.com/mattn/go-sqlite3 v1.14.48
 	github.com/mmcdole/gofeed v1.3.0
 	gopkg.in/yaml.v3 v3.0.1
 )
